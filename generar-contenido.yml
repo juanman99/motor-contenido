@@ -1,0 +1,32 @@
+name: Generar contenido automaticamente
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'   # cada lunes 14:00 UTC (~9am Ecuador)
+  workflow_dispatch: {}     # tambien permite correrlo manualmente desde GitHub
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install anthropic
+
+      - name: Generar articulo
+        run: python generador_articulos.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Subir cambios al repositorio
+        run: |
+          git config user.name "bot-contenido"
+          git config user.email "bot@local"
+          git add cola output publicados
+          git commit -m "Nuevo articulo automatico $(date +%F)" || echo "Sin cambios para subir"
+          git push
